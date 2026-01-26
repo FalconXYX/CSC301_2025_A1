@@ -78,6 +78,16 @@ run_workload() {
     cd "${BASEDIR}/WorkloadParser"
     python3 WorkloadParser.py "$workload_file" "http://127.0.0.1:14000"
 }
+clean() {
+    echo "Cleaning compiled files..."
+    rm -rf "${BASEDIR}/UserService/target"
+    rm -rf "${BASEDIR}/ProductService/target"
+    rm -rf "${BASEDIR}/OrderService/target"
+    rm -rf "${BASEDIR}/UserService/dependency-reduced-pom.xml"
+    rm -rf "${BASEDIR}/ProductService/dependency-reduced-pom.xml"
+    rm -rf "${BASEDIR}/OrderService/dependency-reduced-pom.xml"
+    echo "Clean complete!"
+}
 
 # Parse command line arguments
 if [ $# -eq 0 ]; then
@@ -110,9 +120,13 @@ case "$1" in
     -w)
         run_workload "$2"
         ;;
+    -clean)
+        clean
+        ;;
     *)
         echo "Unknown option: $1"
         echo "Usage: $0 {-c|-u|-p|-o|-i|-w <file>}"
         exit 1
         ;;
+
 esac
