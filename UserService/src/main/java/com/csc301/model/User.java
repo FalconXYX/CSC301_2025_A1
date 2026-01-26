@@ -1,4 +1,4 @@
-package main.java.com.csc301.model;
+package com.csc301.model;
 
 import java.security.MessageDigest;
 import java.util.Objects;

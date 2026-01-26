@@ -1,4 +1,4 @@
-package main.java.com.csc301.repository;
+package com.csc301.repository;
 
 import com.csc301.model.User;
 import java.util.Map;

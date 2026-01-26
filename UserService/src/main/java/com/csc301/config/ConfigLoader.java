@@ -1,4 +1,4 @@
-package main.java.com.csc301.config;
+package com.csc301.config;
 
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;

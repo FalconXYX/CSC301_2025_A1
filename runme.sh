@@ -40,19 +40,19 @@ compile() {
 start_user_service() {
     echo "Starting User Service..."
     cd "${BASEDIR}/UserService"
-    java -cp "target/user-service-1.0.0.jar" com.csc301.UserServiceApp "${CONFIG_FILE}"
+    java -jar "target/user-service-1.0.0.jar" "${CONFIG_FILE}"
 }
 
 start_product_service() {
     echo "Starting Product Service..."
     cd "${BASEDIR}/ProductService"
-    java -cp "target/product-service-1.0.0.jar" com.csc301.ProductServiceApp "${CONFIG_FILE}"
+    java -jar "target/product-service-1.0.0.jar" "${CONFIG_FILE}"
 }
 
 start_order_service() {
     echo "Starting Order Service..."
     cd "${BASEDIR}/OrderService"
-    java -cp "target/order-service-1.0.0.jar" com.csc301.OrderServiceApp "${CONFIG_FILE}"
+    java -jar "target/order-service-1.0.0.jar" "${CONFIG_FILE}"
 }
 
 start_iscs() {

@@ -111,5 +111,6 @@ if __name__ == '__main__':
     port = iscs_config.get("port", 14002)
     
     server = HTTPServer((ip, port), ISCSHandler)
+    server.allow_reuse_address = True
     print(f"ISCS starting on {ip}:{port}")
     server.serve_forever()

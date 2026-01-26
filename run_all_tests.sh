@@ -23,8 +23,9 @@ cleanup() {
     pkill -f "java.*UserService" 2>/dev/null || true
     pkill -f "java.*ProductService" 2>/dev/null || true
     pkill -f "java.*OrderService" 2>/dev/null || true
+    pkill -f "ISCS.py" 2>/dev/null || true
     pkill -f "python.*ISCS" 2>/dev/null || true
-    sleep 1
+    sleep 2
     echo "✓ Services stopped"
 }
 
@@ -66,19 +67,19 @@ main() {
     
     echo "Starting UserService..."
     cd "$BASEDIR/UserService"
-    java -cp "target/user-service-1.0.0.jar" com.csc301.UserServiceApp "$CONFIG_FILE" > /tmp/user.log 2>&1 &
+    java -jar "target/user-service-1.0.0.jar" "$CONFIG_FILE" > /tmp/user.log 2>&1 &
     USER_PID=$!
     sleep 2
     
     echo "Starting ProductService..."
     cd "$BASEDIR/ProductService"
-    java -cp "target/product-service-1.0.0.jar" com.csc301.ProductServiceApp "$CONFIG_FILE" > /tmp/product.log 2>&1 &
+    java -jar "target/product-service-1.0.0.jar" "$CONFIG_FILE" > /tmp/product.log 2>&1 &
     PRODUCT_PID=$!
     sleep 2
     
     echo "Starting OrderService..."
     cd "$BASEDIR/OrderService"
-    java -cp "target/order-service-1.0.0.jar" com.csc301.OrderServiceApp "$CONFIG_FILE" > /tmp/order.log 2>&1 &
+    java -jar "target/order-service-1.0.0.jar" "$CONFIG_FILE" > /tmp/order.log 2>&1 &
     ORDER_PID=$!
     sleep 3
     

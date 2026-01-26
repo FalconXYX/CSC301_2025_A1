@@ -1,4 +1,4 @@
-package main.java.com.csc301;
+package com.csc301;
 
 import com.csc301.config.ConfigLoader;
 import org.springframework.boot.SpringApplication;
