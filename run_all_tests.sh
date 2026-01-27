@@ -38,6 +38,15 @@ main() {
     echo "========================================================================"
     echo ""
     
+    # Kill any leftover processes from previous runs
+    echo "Cleaning up any leftover processes..."
+    pkill -9 -f "user-service" 2>/dev/null || true
+    pkill -9 -f "product-service" 2>/dev/null || true
+    pkill -9 -f "order-service" 2>/dev/null || true
+    pkill -9 -f "ISCS.py" 2>/dev/null || true
+    sleep 2
+    echo ""
+    
     # Check if test script exists
     if [ ! -f "$TEST_SCRIPT" ]; then
         echo -e "${RED}ERROR: Test script not found: $TEST_SCRIPT${NC}"
@@ -125,9 +134,32 @@ main() {
     echo -e "${GREEN}✓ All services verified${NC}"
     echo ""
     
-    # Wait for services to fully initialize
-    echo "Waiting for services to initialize..."
-    sleep 2
+    # Wait for services to fully initialize and become ready
+    echo "Waiting for services to fully initialize..."
+    sleep 5
+    
+    # Try to connect to a few endpoints to ensure services are ready
+    echo "Verifying service connectivity..."
+    RETRIES=0
+    MAX_RETRIES=10
+    while [ $RETRIES -lt $MAX_RETRIES ]; do
+        if curl -s http://127.0.0.1:14001/user/0 > /dev/null 2>&1; then
+            echo -e "${GREEN}✓ Services are ready${NC}"
+            break
+        fi
+        RETRIES=$((RETRIES + 1))
+        if [ $RETRIES -lt $MAX_RETRIES ]; then
+            echo "Waiting... (attempt $RETRIES/$MAX_RETRIES)"
+            sleep 1
+        fi
+    done
+    
+    if [ $RETRIES -ge $MAX_RETRIES ]; then
+        echo -e "${RED}✗ Services failed to respond${NC}"
+        return 1
+    fi
+    
+    echo ""
     
     # Run tests
     echo "========================================================================"

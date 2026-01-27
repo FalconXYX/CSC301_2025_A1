@@ -267,10 +267,17 @@ def main():
     # Check if OrderService is running
     print("\nChecking if OrderService is running...")
     try:
-        req = urllib.request.Request(f"{ORDER_SERVICE_URL}/health" if False else f"{ORDER_SERVICE_URL}/user/0")
-        with urllib.request.urlopen(req, timeout=2) as response:
-            pass
-    except:
+        req = urllib.request.Request(f"{ORDER_SERVICE_URL}/user/0")
+        try:
+            with urllib.request.urlopen(req, timeout=2) as response:
+                pass
+        except urllib.error.HTTPError as e:
+            # HTTPError means service is running but returned an error (expected for non-existent user)
+            if e.code in [404, 400, 401]:
+                pass  # Service is responding, even if endpoint returns error
+            else:
+                raise
+    except Exception as e:
         print(f"WARNING: Could not connect to OrderService at {ORDER_SERVICE_URL}")
         print("Make sure OrderService is running: ./runme.sh -o")
         return 1
