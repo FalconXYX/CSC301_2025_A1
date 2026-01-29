@@ -4,7 +4,6 @@ import com.csc301.model.User;
 import com.csc301.repository.UserRepository;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -49,6 +48,7 @@ public class UserController {
         response.addProperty("id", user.getId());
         response.addProperty("username", user.getUsername());
         response.addProperty("email", user.getEmail());
+        response.addProperty("password", user.getPasswordHash());
         return ResponseEntity.ok(response.toString());
     }
 
@@ -57,22 +57,35 @@ public class UserController {
             return ResponseEntity.status(400).body("{\"error\": \"Missing required fields\"}");
         }
 
-        int id = json.get("id").getAsInt();
-        String username = json.get("username").getAsString();
-        String email = json.get("email").getAsString();
-        String password = json.get("password").getAsString();
+        try {
+            int id = json.get("id").getAsInt();
+            if (!isStringField(json, "username") || !isStringField(json, "email") || !isStringField(json, "password")) {
+                return ResponseEntity.status(400).body("{\"error\": \"Invalid field types\"}");
+            }
+            String username = json.get("username").getAsString();
+            String email = json.get("email").getAsString();
+            String password = json.get("password").getAsString();
 
-        if (username.isEmpty() || email.isEmpty() || password.isEmpty()) {
-            return ResponseEntity.status(400).body("{\"error\": \"Fields cannot be empty\"}");
+            if (username.isEmpty() || email.isEmpty() || password.isEmpty()) {
+                return ResponseEntity.status(400).body("{\"error\": \"Fields cannot be empty\"}");
+            }
+
+            if (userRepository.existsById(id)) {
+                return ResponseEntity.status(409).body("{\"error\": \"User already exists\"}");
+            }
+
+            User user = new User(id, username, email, password);
+            userRepository.save(user);
+
+            JsonObject response = new JsonObject();
+            response.addProperty("id", user.getId());
+            response.addProperty("username", user.getUsername());
+            response.addProperty("email", user.getEmail());
+            response.addProperty("password", user.getPasswordHash());
+            return ResponseEntity.ok(response.toString());
+        } catch (Exception e) {
+            return ResponseEntity.status(400).body("{\"error\": \"Invalid field types\"}");
         }
-
-        if (userRepository.existsById(id)) {
-            return ResponseEntity.status(409).body("{\"error\": \"User already exists\"}");
-        }
-
-        User user = new User(id, username, email, password);
-        userRepository.save(user);
-        return ResponseEntity.ok("{\"message\": \"User created successfully\"}");
     }
 
     private ResponseEntity<?> updateUser(JsonObject json) {
@@ -80,25 +93,58 @@ public class UserController {
             return ResponseEntity.status(400).body("{\"error\": \"Missing id field\"}");
         }
 
-        int id = json.get("id").getAsInt();
-        User user = userRepository.findById(id);
+        try {
+            int id = json.get("id").getAsInt();
+            User user = userRepository.findById(id);
 
-        if (user == null) {
-            return ResponseEntity.status(404).body("{\"error\": \"User not found\"}");
-        }
+            if (user == null) {
+                return ResponseEntity.status(404).body("{\"error\": \"User not found\"}");
+            }
 
-        if (json.has("username") && !json.get("username").getAsString().isEmpty()) {
-            user.setUsername(json.get("username").getAsString());
-        }
-        if (json.has("email") && !json.get("email").getAsString().isEmpty()) {
-            user.setEmail(json.get("email").getAsString());
-        }
-        if (json.has("password") && !json.get("password").getAsString().isEmpty()) {
-            user.setPassword(json.get("password").getAsString());
-        }
+            if (json.has("username")) {
+                if (!isStringField(json, "username")) {
+                    return ResponseEntity.status(400).body("{\"error\": \"Invalid field types\"}");
+                }
+                String username = json.get("username").getAsString();
+                if (username.isEmpty()) {
+                    return ResponseEntity.status(400).body("{\"error\": \"Fields cannot be empty\"}");
+                }
+                user.setUsername(username);
+            }
 
-        userRepository.save(user);
-        return ResponseEntity.ok("{\"message\": \"User updated successfully\"}");
+            if (json.has("email")) {
+                if (!isStringField(json, "email")) {
+                    return ResponseEntity.status(400).body("{\"error\": \"Invalid field types\"}");
+                }
+                String email = json.get("email").getAsString();
+                if (email.isEmpty()) {
+                    return ResponseEntity.status(400).body("{\"error\": \"Fields cannot be empty\"}");
+                }
+                user.setEmail(email);
+            }
+
+            if (json.has("password")) {
+                if (!isStringField(json, "password")) {
+                    return ResponseEntity.status(400).body("{\"error\": \"Invalid field types\"}");
+                }
+                String password = json.get("password").getAsString();
+                if (password.isEmpty()) {
+                    return ResponseEntity.status(400).body("{\"error\": \"Fields cannot be empty\"}");
+                }
+                user.setPassword(password);
+            }
+
+            userRepository.save(user);
+
+            JsonObject response = new JsonObject();
+            response.addProperty("id", user.getId());
+            response.addProperty("username", user.getUsername());
+            response.addProperty("email", user.getEmail());
+            response.addProperty("password", user.getPasswordHash());
+            return ResponseEntity.ok(response.toString());
+        } catch (Exception e) {
+            return ResponseEntity.status(400).body("{\"error\": \"Invalid field types\"}");
+        }
     }
 
     private ResponseEntity<?> deleteUser(JsonObject json) {
@@ -106,24 +152,37 @@ public class UserController {
             return ResponseEntity.status(400).body("{\"error\": \"Missing required fields\"}");
         }
 
-        int id = json.get("id").getAsInt();
-        String username = json.get("username").getAsString();
-        String email = json.get("email").getAsString();
-        String password = json.get("password").getAsString();
+        try {
+            int id = json.get("id").getAsInt();
+            if (!isStringField(json, "username") || !isStringField(json, "email") || !isStringField(json, "password")) {
+                return ResponseEntity.status(400).body("{\"error\": \"Invalid field types\"}");
+            }
+            String username = json.get("username").getAsString();
+            String email = json.get("email").getAsString();
+            String password = json.get("password").getAsString();
 
-        User user = userRepository.findById(id);
-        if (user == null) {
-            return ResponseEntity.status(404).body("{\"error\": \"User not found\"}");
+            User user = userRepository.findById(id);
+            if (user == null) {
+                return ResponseEntity.status(404).body("{\"error\": \"User not found\"}");
+            }
+
+            String passwordHash = User.hashPassword(password);
+            if (!user.getUsername().equals(username) ||
+                !user.getEmail().equals(email) ||
+                !user.getPasswordHash().equals(passwordHash)) {
+                return ResponseEntity.status(404).body("{\"error\": \"Credentials do not match\"}");
+            }
+
+            userRepository.deleteById(id);
+            return ResponseEntity.ok("{}");
+        } catch (Exception e) {
+            return ResponseEntity.status(400).body("{\"error\": \"Invalid field types\"}");
         }
+    }
 
-        String passwordHash = User.hashPassword(password);
-        if (!user.getUsername().equals(username) || 
-            !user.getEmail().equals(email) || 
-            !user.getPasswordHash().equals(passwordHash)) {
-            return ResponseEntity.status(401).body("{\"error\": \"Credentials do not match\"}");
-        }
-
-        userRepository.deleteById(id);
-        return ResponseEntity.ok("{\"message\": \"User deleted successfully\"}");
+    private boolean isStringField(JsonObject json, String fieldName) {
+        return json.has(fieldName)
+                && json.get(fieldName).isJsonPrimitive()
+                && json.get(fieldName).getAsJsonPrimitive().isString();
     }
 }

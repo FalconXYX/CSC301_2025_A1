@@ -35,7 +35,28 @@ public class OrderController {
     public ResponseEntity<?> handleUserRequest(@RequestBody String body) {
         try {
             userServiceClient = new ServiceClient(iscsConfig.ip, iscsConfig.port);
-            return ResponseEntity.ok().body(userServiceClient.makeRequest("/user", "POST", body));
+            JsonObject json = JsonParser.parseString(body).getAsJsonObject();
+
+            if (json.has("command")) {
+                ServiceClient.ServiceResponse response = userServiceClient.request("/user", "POST", body);
+                if (response.statusCode == 404 && response.body != null && response.body.contains("Credentials do not match")) {
+                    return ResponseEntity.ok("{}");
+                }
+                return ResponseEntity.status(response.statusCode).body(response.body);
+            }
+
+            if (json.has("id")) {
+                int id = parseIntStrict(json, "id");
+                ServiceClient.ServiceResponse response = userServiceClient.request("/user/" + id, "GET", "");
+                if (response.statusCode == 404) {
+                    return ResponseEntity.ok("{}");
+                }
+                return ResponseEntity.status(response.statusCode).body(response.body);
+            }
+
+            return ResponseEntity.status(400).body("{\"error\": \"Missing command or id\"}");
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(400).body("{\"error\": \"Invalid field types\"}");
         } catch (Exception e) {
             return ResponseEntity.status(500).body("{\"error\": \"Failed to reach User Service\"}");
         }
@@ -45,9 +66,8 @@ public class OrderController {
     public ResponseEntity<?> getUser(@PathVariable int id) {
         try {
             userServiceClient = new ServiceClient(iscsConfig.ip, iscsConfig.port);
-            JsonObject result = userServiceClient.makeRequest("/user/" + id, "GET", "");
-            return result != null ? ResponseEntity.ok(result.toString()) : 
-                   ResponseEntity.status(404).body("{\"error\": \"User not found\"}");
+            ServiceClient.ServiceResponse response = userServiceClient.request("/user/" + id, "GET", "");
+            return ResponseEntity.status(response.statusCode).body(response.body);
         } catch (Exception e) {
             return ResponseEntity.status(500).body("{\"error\": \"Failed to reach User Service\"}");
         }
@@ -57,7 +77,22 @@ public class OrderController {
     public ResponseEntity<?> handleProductRequest(@RequestBody String body) {
         try {
             productServiceClient = new ServiceClient(iscsConfig.ip, iscsConfig.port);
-            return ResponseEntity.ok().body(productServiceClient.makeRequest("/product", "POST", body));
+            JsonObject json = JsonParser.parseString(body).getAsJsonObject();
+
+            if (json.has("command")) {
+                ServiceClient.ServiceResponse response = productServiceClient.request("/product", "POST", body);
+                return ResponseEntity.status(response.statusCode).body(response.body);
+            }
+
+            if (json.has("id")) {
+                int id = parseIntStrict(json, "id");
+                ServiceClient.ServiceResponse response = productServiceClient.request("/product/" + id, "GET", "");
+                return ResponseEntity.status(response.statusCode).body(response.body);
+            }
+
+            return ResponseEntity.status(400).body("{\"error\": \"Missing command or id\"}");
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(400).body("{\"error\": \"Invalid field types\"}");
         } catch (Exception e) {
             return ResponseEntity.status(500).body("{\"error\": \"Failed to reach Product Service\"}");
         }
@@ -67,9 +102,8 @@ public class OrderController {
     public ResponseEntity<?> getProduct(@PathVariable int id) {
         try {
             productServiceClient = new ServiceClient(iscsConfig.ip, iscsConfig.port);
-            JsonObject result = productServiceClient.makeRequest("/product/" + id, "GET", "");
-            return result != null ? ResponseEntity.ok(result.toString()) : 
-                   ResponseEntity.status(404).body("{\"error\": \"Product not found\"}");
+            ServiceClient.ServiceResponse response = productServiceClient.request("/product/" + id, "GET", "");
+            return ResponseEntity.status(response.statusCode).body(response.body);
         } catch (Exception e) {
             return ResponseEntity.status(500).body("{\"error\": \"Failed to reach Product Service\"}");
         }
@@ -78,28 +112,33 @@ public class OrderController {
     private ResponseEntity<?> handlePlaceOrder(JsonObject json) {
         try {
             if (!json.has("user_id") || !json.has("product_id") || !json.has("quantity")) {
-                return ResponseEntity.status(400).body("{\"error\": \"Missing required fields\"}");
+                return ResponseEntity.status(400).body("{\"status\": \"Invalid Request\"}");
             }
 
-            int userId = json.get("user_id").getAsInt();
-            int productId = json.get("product_id").getAsInt();
-            int quantity = json.get("quantity").getAsInt();
+            int userId = parseIntStrict(json, "user_id");
+            int productId = parseIntStrict(json, "product_id");
+            int quantity = parseIntStrict(json, "quantity");
+
+            if (quantity <= 0) {
+                return ResponseEntity.status(400).body("{\"status\": \"Invalid Request\"}");
+            }
 
             userServiceClient = new ServiceClient(iscsConfig.ip, iscsConfig.port);
-            JsonObject userResult = userServiceClient.makeRequest("/user/" + userId, "GET", "");
-            if (userResult == null) {
-                return ResponseEntity.status(404).body("{\"error\": \"User not found\"}");
+            ServiceClient.ServiceResponse userResponse = userServiceClient.request("/user/" + userId, "GET", "");
+            if (userResponse.statusCode != 200) {
+                return ResponseEntity.status(userResponse.statusCode).body("{\"status\": \"Invalid Request\"}");
             }
 
             productServiceClient = new ServiceClient(iscsConfig.ip, iscsConfig.port);
-            JsonObject productResult = productServiceClient.makeRequest("/product/" + productId, "GET", "");
-            if (productResult == null) {
-                return ResponseEntity.status(404).body("{\"error\": \"Product not found\"}");
+            ServiceClient.ServiceResponse productResponse = productServiceClient.request("/product/" + productId, "GET", "");
+            if (productResponse.statusCode != 200) {
+                return ResponseEntity.status(productResponse.statusCode).body("{\"status\": \"Invalid Request\"}");
             }
 
+            JsonObject productResult = JsonParser.parseString(productResponse.body).getAsJsonObject();
             int currentQuantity = productResult.get("quantity").getAsInt();
             if (currentQuantity < quantity) {
-                return ResponseEntity.status(400).body("{\"error\": \"Insufficient product quantity\"}");
+                return ResponseEntity.ok("{\"status\": \"Exceeded quantity limit\"}");
             }
 
             int newQuantity = currentQuantity - quantity;
@@ -108,18 +147,30 @@ public class OrderController {
             updateProduct.addProperty("id", productId);
             updateProduct.addProperty("quantity", newQuantity);
 
-            productServiceClient.makeRequest("/product", "POST", updateProduct.toString());
+            productServiceClient.request("/product", "POST", updateProduct.toString());
 
             Order order = new Order(userId, productId, quantity);
             orderRepository.save(order);
 
             JsonObject response = new JsonObject();
-            response.addProperty("status", "success");
-            response.addProperty("message", "Order placed successfully");
+            response.addProperty("product_id", productId);
+            response.addProperty("user_id", userId);
+            response.addProperty("quantity", quantity);
+            response.addProperty("status", "Success");
             return ResponseEntity.ok(response.toString());
+        } catch (RuntimeException e) {
+            return ResponseEntity.status(400).body("{\"status\": \"Invalid Request\"}");
         } catch (Exception e) {
             return ResponseEntity.status(500).body("{\"error\": \"Failed to process order\"}");
         }
+    }
+
+    private int parseIntStrict(JsonObject json, String fieldName) {
+        double value = json.get(fieldName).getAsDouble();
+        if (value % 1 != 0) {
+            throw new IllegalArgumentException("Non-integer value for field: " + fieldName);
+        }
+        return (int) value;
     }
 
     public void setISCSConfig(ConfigLoader.ISCSConfig config) {

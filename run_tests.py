@@ -31,6 +31,9 @@ test_results = {
 failed_tests = []
 error_tests = []
 
+# Output control
+SILENT = "-s" in sys.argv
+
 def load_json_file(filepath):
     """Load JSON file"""
     try:
@@ -119,9 +122,10 @@ def verify_response(test_name, test_key, expected_response, actual_status, actua
 
 def run_user_tests():
     """Run user service tests"""
-    print("\n" + "="*80)
-    print("TESTING USER SERVICE")
-    print("="*80)
+    if not SILENT:
+        print("\n" + "="*80)
+        print("TESTING USER SERVICE")
+        print("="*80)
     
     payloads = load_json_file(f"{PAYLOAD_DIR}/user_testcases.json")
     responses = load_json_file(f"{RESPONSE_DIR}/user_responses.json")
@@ -136,15 +140,17 @@ def run_user_tests():
         test_count += 1
         expected_response = responses.get(test_name, {})
         
-        print(f"\n[{test_count}] {test_name}")
-        print(f"    Payload: {json.dumps(payload)[:80]}...")
+        if not SILENT:
+            print(f"\n[{test_count}] {test_name}")
+            print(f"    Payload: {json.dumps(payload)[:80]}...")
         
         status, response = send_request("/user", payload)
         
         success, message = verify_response(test_name, test_name, expected_response, status, response)
         
         if success:
-            print(f"    ✓ PASS - {message}")
+            if not SILENT:
+                print(f"    ✓ PASS - {message}")
             test_results["passed"] += 1
         else:
             print(f"    ✗ FAIL - {message}")
@@ -155,9 +161,10 @@ def run_user_tests():
 
 def run_product_tests():
     """Run product service tests"""
-    print("\n" + "="*80)
-    print("TESTING PRODUCT SERVICE")
-    print("="*80)
+    if not SILENT:
+        print("\n" + "="*80)
+        print("TESTING PRODUCT SERVICE")
+        print("="*80)
     
     payloads = load_json_file(f"{PAYLOAD_DIR}/product_testcases.json")
     responses = load_json_file(f"{RESPONSE_DIR}/product_responses.json")
@@ -172,15 +179,17 @@ def run_product_tests():
         test_count += 1
         expected_response = responses.get(test_name, {})
         
-        print(f"\n[{test_count}] {test_name}")
-        print(f"    Payload: {json.dumps(payload)[:80]}...")
+        if not SILENT:
+            print(f"\n[{test_count}] {test_name}")
+            print(f"    Payload: {json.dumps(payload)[:80]}...")
         
         status, response = send_request("/product", payload)
         
         success, message = verify_response(test_name, test_name, expected_response, status, response)
         
         if success:
-            print(f"    ✓ PASS - {message}")
+            if not SILENT:
+                print(f"    ✓ PASS - {message}")
             test_results["passed"] += 1
         else:
             print(f"    ✗ FAIL - {message}")
@@ -191,9 +200,10 @@ def run_product_tests():
 
 def run_order_tests():
     """Run order service tests"""
-    print("\n" + "="*80)
-    print("TESTING ORDER SERVICE")
-    print("="*80)
+    if not SILENT:
+        print("\n" + "="*80)
+        print("TESTING ORDER SERVICE")
+        print("="*80)
     
     payloads = load_json_file(f"{PAYLOAD_DIR}/order_testcases.json")
     responses = load_json_file(f"{RESPONSE_DIR}/order_responses.json")
@@ -208,15 +218,17 @@ def run_order_tests():
         test_count += 1
         expected_response = responses.get(test_name, {})
         
-        print(f"\n[{test_count}] {test_name}")
-        print(f"    Payload: {json.dumps(payload)[:80]}...")
+        if not SILENT:
+            print(f"\n[{test_count}] {test_name}")
+            print(f"    Payload: {json.dumps(payload)[:80]}...")
         
         status, response = send_request("/order", payload)
         
         success, message = verify_response(test_name, test_name, expected_response, status, response)
         
         if success:
-            print(f"    ✓ PASS - {message}")
+            if not SILENT:
+                print(f"    ✓ PASS - {message}")
             test_results["passed"] += 1
         else:
             print(f"    ✗ FAIL - {message}")
@@ -227,6 +239,12 @@ def run_order_tests():
 
 def print_summary():
     """Print test summary"""
+    if SILENT:
+        if failed_tests:
+            for test_name, message in failed_tests:
+                print(f"  - {test_name}: {message}")
+        return 0 if test_results['failed'] == 0 and test_results['errors'] == 0 else 1
+
     print("\n" + "="*80)
     print("TEST SUMMARY")
     print("="*80)
@@ -250,10 +268,11 @@ def print_summary():
 
 def main():
     """Main test runner"""
-    print("CSC301 A1 - TEST SUITE")
-    print("="*80)
-    print(f"Order Service URL: {ORDER_SERVICE_URL}")
-    print(f"Test Cases Dir: {TEST_CASES_DIR}")
+    if not SILENT:
+        print("CSC301 A1 - TEST SUITE")
+        print("="*80)
+        print(f"Order Service URL: {ORDER_SERVICE_URL}")
+        print(f"Test Cases Dir: {TEST_CASES_DIR}")
     
     # Check if test directories exist
     if not os.path.exists(PAYLOAD_DIR):
@@ -265,7 +284,8 @@ def main():
         return 1
     
     # Check if OrderService is running
-    print("\nChecking if OrderService is running...")
+    if not SILENT:
+        print("\nChecking if OrderService is running...")
     try:
         req = urllib.request.Request(f"{ORDER_SERVICE_URL}/user/0")
         try:
@@ -282,7 +302,8 @@ def main():
         print("Make sure OrderService is running: ./runme.sh -o")
         return 1
     
-    print("✓ OrderService is running")
+    if not SILENT:
+        print("✓ OrderService is running")
     
     # Run tests in order: User -> Product -> Order
     run_user_tests()

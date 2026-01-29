@@ -46,33 +46,55 @@ public class ProductController {
 
         JsonObject response = new JsonObject();
         response.addProperty("id", product.getId());
-        response.addProperty("productname", product.getProductname());
+        response.addProperty("name", product.getProductname());
+        response.addProperty("description", product.getDescription());
         response.addProperty("price", product.getPrice());
         response.addProperty("quantity", product.getQuantity());
         return ResponseEntity.ok(response.toString());
     }
 
     private ResponseEntity<?> createProduct(JsonObject json) {
-        if (!json.has("id") || !json.has("productname") || !json.has("price") || !json.has("quantity")) {
+        if (!json.has("id") || !json.has("name") || !json.has("description") || !json.has("price") || !json.has("quantity")) {
             return ResponseEntity.status(400).body("{\"error\": \"Missing required fields\"}");
         }
 
-        int id = json.get("id").getAsInt();
-        String productname = json.get("productname").getAsString();
-        float price = json.get("price").getAsFloat();
-        int quantity = json.get("quantity").getAsInt();
+        try {
+            int id = parseIntStrict(json, "id");
+            String name = json.get("name").getAsString();
+            String description = json.get("description").getAsString();
+            float price = (float) json.get("price").getAsDouble();
+            int quantity = parseIntStrict(json, "quantity");
 
-        if (productname.isEmpty()) {
-            return ResponseEntity.status(400).body("{\"error\": \"Product name cannot be empty\"}");
+            if (name == null || name.isEmpty()) {
+                return ResponseEntity.status(400).body("{\"error\": \"Product name cannot be empty\"}");
+            }
+
+            if (description == null || description.isEmpty()) {
+                return ResponseEntity.status(400).body("{\"error\": \"Product description cannot be empty\"}");
+            }
+
+            if (price < 0 || quantity < 0) {
+                return ResponseEntity.status(400).body("{\"error\": \"Invalid field values\"}");
+            }
+
+            if (productRepository.existsById(id)) {
+                return ResponseEntity.status(409).body("{\"error\": \"Product already exists\"}");
+            }
+
+            Product product = new Product(id, name, price, quantity);
+            product.setDescription(description);
+            productRepository.save(product);
+
+            JsonObject response = new JsonObject();
+            response.addProperty("id", product.getId());
+            response.addProperty("name", product.getProductname());
+            response.addProperty("description", product.getDescription());
+            response.addProperty("price", product.getPrice());
+            response.addProperty("quantity", product.getQuantity());
+            return ResponseEntity.ok(response.toString());
+        } catch (Exception e) {
+            return ResponseEntity.status(400).body("{\"error\": \"Invalid field types\"}");
         }
-
-        if (productRepository.existsById(id)) {
-            return ResponseEntity.status(409).body("{\"error\": \"Product already exists\"}");
-        }
-
-        Product product = new Product(id, productname, price, quantity);
-        productRepository.save(product);
-        return ResponseEntity.ok("{\"message\": \"Product created successfully\"}");
     }
 
     private ResponseEntity<?> updateProduct(JsonObject json) {
@@ -80,49 +102,94 @@ public class ProductController {
             return ResponseEntity.status(400).body("{\"error\": \"Missing id field\"}");
         }
 
-        int id = json.get("id").getAsInt();
-        Product product = productRepository.findById(id);
+        try {
+            int id = parseIntStrict(json, "id");
+            Product product = productRepository.findById(id);
 
-        if (product == null) {
-            return ResponseEntity.status(404).body("{\"error\": \"Product not found\"}");
-        }
+            if (product == null) {
+                return ResponseEntity.status(404).body("{\"error\": \"Product not found\"}");
+            }
 
-        if (json.has("productname") && !json.get("productname").getAsString().isEmpty()) {
-            product.setProductname(json.get("productname").getAsString());
-        }
-        if (json.has("price")) {
-            product.setPrice(json.get("price").getAsFloat());
-        }
-        if (json.has("quantity")) {
-            product.setQuantity(json.get("quantity").getAsInt());
-        }
+            if (json.has("name")) {
+                String name = json.get("name").getAsString();
+                if (name.isEmpty()) {
+                    return ResponseEntity.status(400).body("{\"error\": \"Product name cannot be empty\"}");
+                }
+                product.setProductname(name);
+            }
 
-        productRepository.save(product);
-        return ResponseEntity.ok("{\"message\": \"Product updated successfully\"}");
+            if (json.has("description")) {
+                String description = json.get("description").getAsString();
+                if (description.isEmpty()) {
+                    return ResponseEntity.status(400).body("{\"error\": \"Product description cannot be empty\"}");
+                }
+                product.setDescription(description);
+            }
+
+            if (json.has("price")) {
+                float price = (float) json.get("price").getAsDouble();
+                if (price < 0) {
+                    return ResponseEntity.status(400).body("{\"error\": \"Invalid field values\"}");
+                }
+                product.setPrice(price);
+            }
+
+            if (json.has("quantity")) {
+                int quantity = parseIntStrict(json, "quantity");
+                if (quantity < 0) {
+                    return ResponseEntity.status(400).body("{\"error\": \"Invalid field values\"}");
+                }
+                product.setQuantity(quantity);
+            }
+
+            productRepository.save(product);
+
+            JsonObject response = new JsonObject();
+            response.addProperty("id", product.getId());
+            response.addProperty("name", product.getProductname());
+            response.addProperty("description", product.getDescription());
+            response.addProperty("price", product.getPrice());
+            response.addProperty("quantity", product.getQuantity());
+            return ResponseEntity.ok(response.toString());
+        } catch (Exception e) {
+            return ResponseEntity.status(400).body("{\"error\": \"Invalid field types\"}");
+        }
     }
 
     private ResponseEntity<?> deleteProduct(JsonObject json) {
-        if (!json.has("id") || !json.has("productname") || !json.has("price") || !json.has("quantity")) {
+        if (!json.has("id") || !json.has("name") || !json.has("price") || !json.has("quantity")) {
             return ResponseEntity.status(400).body("{\"error\": \"Missing required fields\"}");
         }
 
-        int id = json.get("id").getAsInt();
-        String productname = json.get("productname").getAsString();
-        float price = json.get("price").getAsFloat();
-        int quantity = json.get("quantity").getAsInt();
+        try {
+            int id = parseIntStrict(json, "id");
+            String name = json.get("name").getAsString();
+            float price = (float) json.get("price").getAsDouble();
+            int quantity = parseIntStrict(json, "quantity");
 
-        Product product = productRepository.findById(id);
-        if (product == null) {
-            return ResponseEntity.status(404).body("{\"error\": \"Product not found\"}");
+            Product product = productRepository.findById(id);
+            if (product == null) {
+                return ResponseEntity.status(404).body("{\"error\": \"Product not found\"}");
+            }
+
+            if (!product.getProductname().equals(name) ||
+                product.getPrice() != price ||
+                product.getQuantity() != quantity) {
+                return ResponseEntity.status(404).body("{\"error\": \"Product details do not match\"}");
+            }
+
+            productRepository.deleteById(id);
+            return ResponseEntity.ok("{}");
+        } catch (Exception e) {
+            return ResponseEntity.status(400).body("{\"error\": \"Invalid field types\"}");
         }
+    }
 
-        if (!product.getProductname().equals(productname) || 
-            product.getPrice() != price || 
-            product.getQuantity() != quantity) {
-            return ResponseEntity.status(401).body("{\"error\": \"Product details do not match\"}");
+    private int parseIntStrict(JsonObject json, String fieldName) {
+        double value = json.get(fieldName).getAsDouble();
+        if (value % 1 != 0) {
+            throw new IllegalArgumentException("Non-integer value for field: " + fieldName);
         }
-
-        productRepository.deleteById(id);
-        return ResponseEntity.ok("{\"message\": \"Product deleted successfully\"}");
+        return (int) value;
     }
 }
