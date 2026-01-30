@@ -16,17 +16,33 @@
 # specific language governing permissions and limitations
 # under the License.
 
-# Simplified Maven Wrapper for CSC301
+set -e
 
-# Determine Maven installation
-if command -v mvn &> /dev/null; then
-    exec mvn "$@"
-elif [ -f ".mvn/wrapper/maven-wrapper.jar" ]; then
-    # Use embedded Maven
-    BASEDIR=$(cd "$(dirname "$0")" && pwd)
-    exec java -cp "$BASEDIR/.mvn/wrapper/maven-wrapper.jar" org.apache.maven.wrapper.MavenWrapperMain "$@"
-else
-    echo "Error: Maven not found and wrapper not available"
-    echo "Please install Maven or ensure .mvn/wrapper/maven-wrapper.jar exists"
+BASEDIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)
+MAVEN_PROJECTBASEDIR="$BASEDIR"
+WRAPPER_DIR="$BASEDIR/.mvn/wrapper"
+PROPS="$WRAPPER_DIR/maven-wrapper.properties"
+WRAPPER_JAR="$WRAPPER_DIR/maven-wrapper.jar"
+
+if [ ! -f "$PROPS" ]; then
+    echo "Error: $PROPS not found"
     exit 1
 fi
+
+if [ ! -f "$WRAPPER_JAR" ]; then
+    WRAPPER_URL=$(grep -E '^wrapperUrl=' "$PROPS" | cut -d= -f2-)
+    if [ -z "$WRAPPER_URL" ]; then
+        WRAPPER_URL="https://repo.maven.apache.org/maven2/org/apache/maven/wrapper/maven-wrapper/3.2.0/maven-wrapper-3.2.0.jar"
+    fi
+
+    if command -v curl >/dev/null 2>&1; then
+        curl -fsSL "$WRAPPER_URL" -o "$WRAPPER_JAR"
+    elif command -v wget >/dev/null 2>&1; then
+        wget -q -O "$WRAPPER_JAR" "$WRAPPER_URL"
+    else
+        echo "Error: curl or wget is required to download the Maven wrapper jar"
+        exit 1
+    fi
+fi
+
+exec java -classpath "$WRAPPER_JAR" -Dmaven.multiModuleProjectDirectory="$MAVEN_PROJECTBASEDIR" org.apache.maven.wrapper.MavenWrapperMain "$@"
