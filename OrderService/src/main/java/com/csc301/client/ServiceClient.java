@@ -66,11 +66,17 @@ public class ServiceClient {
         HttpRequest.Builder requestBuilder = HttpRequest.newBuilder()
                 .uri(new URI(baseUrl + path));
 
-        if ("POST".equalsIgnoreCase(method)) {
-            requestBuilder.POST(HttpRequest.BodyPublishers.ofString(body))
-                    .header("Content-Type", "application/json");
-        } else {
-            requestBuilder.GET();
+        switch (method.toUpperCase()) {
+            case "POST":
+                requestBuilder.POST(HttpRequest.BodyPublishers.ofString(body != null ? body : ""))
+                        .header("Content-Type", "application/json");
+                break;
+            case "DELETE":
+                requestBuilder.DELETE();
+                break;
+            default: // GET
+                requestBuilder.GET();
+                break;
         }
 
         HttpRequest request = requestBuilder.build();

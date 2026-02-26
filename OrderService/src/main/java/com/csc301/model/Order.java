@@ -1,11 +1,24 @@
 package com.csc301.model;
 
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
 import java.util.UUID;
 
+@Entity
+@Table(name = "\"order\"")
 public class Order {
+    @Id
     private String id;
+
+    @Column(name = "user_id", nullable = false)
     private int user_id;
+
+    @Column(name = "product_id", nullable = false)
     private int product_id;
+
+    @Column(nullable = false)
     private int quantity;
 
     public Order() {

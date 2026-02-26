@@ -1,0 +1,27 @@
+version: "3.8"
+
+# Docker is used only for the PostgreSQL database.
+# All application services (UserService, ProductService, OrderService, ISCS)
+# are run locally via run_a2_tests.sh.
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: csc301_postgres
+    environment:
+      POSTGRES_USER: csc301
+      POSTGRES_PASSWORD: csc301password
+      POSTGRES_DB: csc301_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init-db.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U csc301"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  postgres_data:

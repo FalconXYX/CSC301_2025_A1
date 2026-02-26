@@ -4,13 +4,20 @@ import com.csc301.model.Product;
 import com.csc301.repository.ProductRepository;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/product")
 public class ProductController {
-    private final ProductRepository productRepository = new ProductRepository();
+    @Autowired
+    private ProductRepository productRepository;
+
+    @Autowired
+    private ConfigurableApplicationContext applicationContext;
 
     @PostMapping
     public ResponseEntity<?> handleProductRequest(@RequestBody String body) {
@@ -39,17 +46,18 @@ public class ProductController {
 
     @GetMapping("/{id}")
     public ResponseEntity<?> getProduct(@PathVariable int id) {
-        Product product = productRepository.findById(id);
-        if (product == null) {
+        Optional<Product> product = productRepository.findById(id);
+        if (!product.isPresent()) {
             return ResponseEntity.status(404).body("{\"error\": \"Product not found\"}");
         }
 
+        Product p = product.get();
         JsonObject response = new JsonObject();
-        response.addProperty("id", product.getId());
-        response.addProperty("name", product.getProductname());
-        response.addProperty("description", product.getDescription());
-        response.addProperty("price", product.getPrice());
-        response.addProperty("quantity", product.getQuantity());
+        response.addProperty("id", p.getId());
+        response.addProperty("name", p.getProductname());
+        response.addProperty("description", p.getDescription());
+        response.addProperty("price", p.getPrice());
+        response.addProperty("quantity", p.getQuantity());
         return ResponseEntity.ok(response.toString());
     }
 
@@ -104,11 +112,13 @@ public class ProductController {
 
         try {
             int id = parseIntStrict(json, "id");
-            Product product = productRepository.findById(id);
+            Optional<Product> productOpt = productRepository.findById(id);
 
-            if (product == null) {
+            if (!productOpt.isPresent()) {
                 return ResponseEntity.status(404).body("{\"error\": \"Product not found\"}");
             }
+
+            Product product = productOpt.get();
 
             if (json.has("name")) {
                 String name = json.get("name").getAsString();
@@ -167,11 +177,12 @@ public class ProductController {
             float price = (float) json.get("price").getAsDouble();
             int quantity = parseIntStrict(json, "quantity");
 
-            Product product = productRepository.findById(id);
-            if (product == null) {
+            Optional<Product> productOpt = productRepository.findById(id);
+            if (!productOpt.isPresent()) {
                 return ResponseEntity.status(404).body("{\"error\": \"Product not found\"}");
             }
 
+            Product product = productOpt.get();
             if (!product.getProductname().equals(name) ||
                 product.getPrice() != price ||
                 product.getQuantity() != quantity) {
@@ -191,5 +202,28 @@ public class ProductController {
             throw new IllegalArgumentException("Non-integer value for field: " + fieldName);
         }
         return (int) value;
+    }
+
+    // Delete all products (called by OrderService on non-restart startup)
+    @DeleteMapping("/deleteall")
+    public ResponseEntity<?> deleteAllProducts() {
+        try {
+            productRepository.deleteAll();
+            return ResponseEntity.ok("{\"message\": \"All products deleted\"}");
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("{\"error\": \"Failed to delete all products\"}");
+        }
+    }
+
+    // Shutdown endpoint
+    @PostMapping("/shutdown")
+    public ResponseEntity<?> shutdown() {
+        System.out.println("Shutdown command received — shutting down ProductService.");
+        new Thread(() -> {
+            try { Thread.sleep(200); } catch (InterruptedException ignored) {}
+            applicationContext.close();
+            System.exit(0);
+        }).start();
+        return ResponseEntity.ok("{\"message\": \"Product Service shutting down\"}");
     }
 }

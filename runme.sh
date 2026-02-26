@@ -1,12 +1,15 @@
 #!/bin/bash
 
-# CSC301 A1 - Microservices System startup script
-# Usage: ./runme.sh -c  (compile)
-#        ./runme.sh -u  (start User service)
-#        ./runme.sh -p  (start Product service)
-#        ./runme.sh -o  (start Order service)
-#        ./runme.sh -i  (start ISCS)
-#        ./runme.sh -w <workloadfile> (run workload parser)
+# CSC301 A2 - Microservices System startup script
+# Usage: ./runme.sh -c              (compile all services)
+#        ./runme.sh -u              (start User service locally)
+#        ./runme.sh -p              (start Product service locally)
+#        ./runme.sh -o              (start Order service locally)
+#        ./runme.sh -i              (start ISCS locally)
+#        ./runme.sh -w <file>       (run workload parser)
+#        ./runme.sh -d              (start all services via Docker Compose)
+#        ./runme.sh -ddown          (stop all Docker Compose services)
+#        ./runme.sh -clean          (remove compiled artifacts)
 
 set -e
 
@@ -22,17 +25,17 @@ compile() {
     # Compile UserService
     echo "Compiling UserService..."
     cd "${BASEDIR}/UserService"
-    ${MVN_CMD} clean package -q
+    ${MVN_CMD} clean package -q -DskipTests
     
     # Compile ProductService
     echo "Compiling ProductService..."
     cd "${BASEDIR}/ProductService"
-    ${MVN_CMD} clean package -q
+    ${MVN_CMD} clean package -q -DskipTests
     
     # Compile OrderService
     echo "Compiling OrderService..."
     cd "${BASEDIR}/OrderService"
-    ${MVN_CMD} clean package -q
+    ${MVN_CMD} clean package -q -DskipTests
     
     echo "Compilation complete!"
 }
@@ -78,6 +81,27 @@ run_workload() {
     cd "${BASEDIR}/WorkloadParser"
     python3 WorkloadParser.py "$workload_file" "http://127.0.0.1:14000"
 }
+
+docker_up() {
+    echo "Starting all services via Docker Compose..."
+    cd "${BASEDIR}"
+    docker compose up --build -d
+    echo ""
+    echo "Services started. Ports:"
+    echo "  Order Service:  http://localhost:14000"
+    echo "  User Service:   http://localhost:14001"
+    echo "  ISCS:           http://localhost:14002"
+    echo "  Product Service: http://localhost:15000"
+    echo "  PostgreSQL:     localhost:5432"
+}
+
+docker_down() {
+    echo "Stopping all Docker Compose services..."
+    cd "${BASEDIR}"
+    docker compose down
+    echo "All services stopped."
+}
+
 clean() {
     echo "Cleaning compiled files..."
     rm -rf "${BASEDIR}/UserService/target"
@@ -91,13 +115,16 @@ clean() {
 
 # Parse command line arguments
 if [ $# -eq 0 ]; then
-    echo "Usage: $0 {-c|-u|-p|-o|-i|-w <file>}"
-    echo "  -c              Compile all services"
-    echo "  -u              Start User Service"
-    echo "  -p              Start Product Service"
-    echo "  -o              Start Order Service"
-    echo "  -i              Start ISCS"
+    echo "Usage: $0 {-c|-u|-p|-o|-i|-w <file>|-d|-ddown|-clean}"
+    echo "  -c                Compile all services"
+    echo "  -u                Start User Service (local)"
+    echo "  -p                Start Product Service (local)"
+    echo "  -o                Start Order Service (local)"
+    echo "  -i                Start ISCS (local)"
     echo "  -w <workloadfile> Run Workload Parser"
+    echo "  -d                Start all services via Docker Compose"
+    echo "  -ddown            Stop all Docker Compose services"
+    echo "  -clean            Remove compiled artifacts"
     exit 1
 fi
 
@@ -120,13 +147,19 @@ case "$1" in
     -w)
         run_workload "$2"
         ;;
+    -d)
+        docker_up
+        ;;
+    -ddown)
+        docker_down
+        ;;
     -clean)
         clean
         ;;
     *)
         echo "Unknown option: $1"
-        echo "Usage: $0 {-c|-u|-p|-o|-i|-w <file>}"
+        echo "Usage: $0 {-c|-u|-p|-o|-i|-w <file>|-d|-ddown|-clean}"
         exit 1
         ;;
-
 esac
+

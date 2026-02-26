@@ -4,13 +4,20 @@ import com.csc301.model.User;
 import com.csc301.repository.UserRepository;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/user")
 public class UserController {
-    private final UserRepository userRepository = new UserRepository();
+    @Autowired
+    private UserRepository userRepository;
+
+    @Autowired
+    private ConfigurableApplicationContext applicationContext;
 
     @PostMapping
     public ResponseEntity<?> handleUserRequest(@RequestBody String body) {
@@ -39,16 +46,17 @@ public class UserController {
 
     @GetMapping("/{id}")
     public ResponseEntity<?> getUser(@PathVariable int id) {
-        User user = userRepository.findById(id);
-        if (user == null) {
+        Optional<User> user = userRepository.findById(id);
+        if (!user.isPresent()) {
             return ResponseEntity.status(404).body("{\"error\": \"User not found\"}");
         }
 
+        User u = user.get();
         JsonObject response = new JsonObject();
-        response.addProperty("id", user.getId());
-        response.addProperty("username", user.getUsername());
-        response.addProperty("email", user.getEmail());
-        response.addProperty("password", user.getPasswordHash());
+        response.addProperty("id", u.getId());
+        response.addProperty("username", u.getUsername());
+        response.addProperty("email", u.getEmail());
+        response.addProperty("password", u.getPasswordHash());
         return ResponseEntity.ok(response.toString());
     }
 
@@ -95,11 +103,13 @@ public class UserController {
 
         try {
             int id = json.get("id").getAsInt();
-            User user = userRepository.findById(id);
+            Optional<User> userOpt = userRepository.findById(id);
 
-            if (user == null) {
+            if (!userOpt.isPresent()) {
                 return ResponseEntity.status(404).body("{\"error\": \"User not found\"}");
             }
+
+            User user = userOpt.get();
 
             if (json.has("username")) {
                 if (!isStringField(json, "username")) {
@@ -161,11 +171,12 @@ public class UserController {
             String email = json.get("email").getAsString();
             String password = json.get("password").getAsString();
 
-            User user = userRepository.findById(id);
-            if (user == null) {
+            Optional<User> userOpt = userRepository.findById(id);
+            if (!userOpt.isPresent()) {
                 return ResponseEntity.status(404).body("{\"error\": \"User not found\"}");
             }
 
+            User user = userOpt.get();
             String passwordHash = User.hashPassword(password);
             if (!user.getUsername().equals(username) ||
                 !user.getEmail().equals(email) ||
@@ -184,5 +195,28 @@ public class UserController {
         return json.has(fieldName)
                 && json.get(fieldName).isJsonPrimitive()
                 && json.get(fieldName).getAsJsonPrimitive().isString();
+    }
+
+    // Delete all users (called by OrderService on non-restart startup)
+    @DeleteMapping("/deleteall")
+    public ResponseEntity<?> deleteAllUsers() {
+        try {
+            userRepository.deleteAll();
+            return ResponseEntity.ok("{\"message\": \"All users deleted\"}");
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("{\"error\": \"Failed to delete all users\"}");
+        }
+    }
+
+    // Shutdown endpoint
+    @PostMapping("/shutdown")
+    public ResponseEntity<?> shutdown() {
+        System.out.println("Shutdown command received — shutting down UserService.");
+        new Thread(() -> {
+            try { Thread.sleep(200); } catch (InterruptedException ignored) {}
+            applicationContext.close();
+            System.exit(0);
+        }).start();
+        return ResponseEntity.ok("{\"message\": \"User Service shutting down\"}");
     }
 }

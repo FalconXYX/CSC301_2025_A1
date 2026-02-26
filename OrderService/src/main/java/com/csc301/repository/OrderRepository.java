@@ -1,30 +1,14 @@
 package com.csc301.repository;
 
 import com.csc301.model.Order;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+import org.springframework.stereotype.Repository;
+import java.util.List;
 
-public class OrderRepository {
-    private static final Map<String, Order> orders = new ConcurrentHashMap<>();
-
-    public Order save(Order order) {
-        orders.put(order.getId(), order);
-        return order;
-    }
-
-    public Order findById(String id) {
-        return orders.get(id);
-    }
-
-    public boolean existsById(String id) {
-        return orders.containsKey(id);
-    }
-
-    public void deleteById(String id) {
-        orders.remove(id);
-    }
-
-    public void clear() {
-        orders.clear();
-    }
+@Repository
+public interface OrderRepository extends JpaRepository<Order, String> {
+    @Query("SELECT o FROM Order o WHERE o.user_id = :userId")
+    List<Order> findByUser_id(@Param("userId") int userId);
 }

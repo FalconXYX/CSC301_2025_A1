@@ -1,30 +1,12 @@
 package com.csc301.repository;
 
 import com.csc301.model.User;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+import java.util.Optional;
 
-public class UserRepository {
-    private static final Map<Integer, User> users = new ConcurrentHashMap<>();
-
-    public User save(User user) {
-        users.put(user.getId(), user);
-        return user;
-    }
-
-    public User findById(int id) {
-        return users.get(id);
-    }
-
-    public boolean existsById(int id) {
-        return users.containsKey(id);
-    }
-
-    public void deleteById(int id) {
-        users.remove(id);
-    }
-
-    public void clear() {
-        users.clear();
-    }
+@Repository
+public interface UserRepository extends JpaRepository<User, Integer> {
+    Optional<User> findByUsername(String username);
+    Optional<User> findByEmail(String email);
 }

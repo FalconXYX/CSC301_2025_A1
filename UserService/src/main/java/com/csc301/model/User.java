@@ -1,21 +1,35 @@
 package com.csc301.model;
 
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
 import java.security.MessageDigest;
 import java.util.Objects;
 
+@Entity
+@Table(name = "\"user\"")
 public class User {
+    @Id
+    @Column(name = "id")
     private int id;
+
+    @Column(nullable = false, unique = true)
     private String username;
+
+    @Column(nullable = false, unique = true)
     private String email;
-    private String passwordHash;
+
+    @Column(nullable = false)
+    private String password;
 
     public User() {}
 
-    public User(int id, String username, String email, String password) {
+    public User(int id, String username, String email, String rawPassword) {
         this.id = id;
         this.username = username;
         this.email = email;
-        this.passwordHash = hashPassword(password);
+        this.password = hashPassword(rawPassword);
     }
 
     public static String hashPassword(String password) {
@@ -43,11 +57,18 @@ public class User {
     public String getEmail() { return email; }
     public void setEmail(String email) { this.email = email; }
 
-    public String getPasswordHash() { return passwordHash; }
-    public void setPasswordHash(String passwordHash) { this.passwordHash = passwordHash; }
+    public String getPassword() { return password; }
 
-    public void setPassword(String password) {
-        this.passwordHash = hashPassword(password);
+    /** Sets password by hashing the provided raw password. */
+    public void setPassword(String rawPassword) { this.password = hashPassword(rawPassword); }
+
+    /** Directly sets the stored password hash (used by JPA via field access). */
+    public void setPasswordHash(String passwordHash) { 
+        this.password = passwordHash; 
+    }
+
+    public String getPasswordHash() { 
+        return password; 
     }
 
     @Override
@@ -58,11 +79,11 @@ public class User {
         return id == user.id &&
                 Objects.equals(username, user.username) &&
                 Objects.equals(email, user.email) &&
-                Objects.equals(passwordHash, user.passwordHash);
+                Objects.equals(password, user.password);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, username, email, passwordHash);
+        return Objects.hash(id, username, email, password);
     }
 }

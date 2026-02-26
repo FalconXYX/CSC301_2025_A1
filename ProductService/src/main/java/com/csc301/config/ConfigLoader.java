@@ -7,7 +7,7 @@ import java.io.IOException;
 
 public class ConfigLoader {
     public static Config loadConfig(String configPath) throws IOException {
-        return loadConfig(configPath, "UserService");
+        return loadConfig(configPath, "ProductService");
     }
 
     public static Config loadConfig(String configPath, String serviceName) throws IOException {
