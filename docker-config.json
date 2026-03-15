@@ -1,0 +1,18 @@
+{
+  "UserService": {
+    "port": 14001,
+    "ip": "user-service"
+  },
+  "ProductService": {
+    "port": 15000,
+    "ip": "product-service"
+  },
+  "OrderService": {
+    "port": 14000,
+    "ip": "order-service"
+  },
+  "InterServiceCommunication": {
+    "port": 14002,
+    "ip": "iscs"
+  }
+}

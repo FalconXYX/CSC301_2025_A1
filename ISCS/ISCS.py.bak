@@ -5,7 +5,7 @@ import os
 import sys
 import urllib.request
 import urllib.error
-from http.server import ThreadingHTTPServer, BaseHTTPRequestHandler
+from http.server import HTTPServer, BaseHTTPRequestHandler
 from threading import Thread
 import time
 
@@ -140,7 +140,7 @@ if __name__ == '__main__':
     ip = os.environ.get("ISCS_LISTEN_IP", iscs_config.get("ip", "127.0.0.1"))
     port = int(os.environ.get("ISCS_LISTEN_PORT", iscs_config.get("port", 14002)))
 
-    server = ThreadingHTTPServer((ip, port), ISCSHandler)
+    server = HTTPServer((ip, port), ISCSHandler)
     server.allow_reuse_address = True
     print(f"ISCS starting on {ip}:{port}")
     server.serve_forever()

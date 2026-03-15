@@ -10,12 +10,11 @@ COPY src ./src
 RUN mvn clean package -DskipTests -q
 
 # Runtime stage
-FROM eclipse-temurin:17-jre-alpine
+FROM eclipse-temurin:17-jre
 WORKDIR /app
 
 # Copy built jar
 COPY --from=builder /build/target/order-service-1.0.0.jar app.jar
-COPY --from=builder /build/target/dependency-reduced-pom.xml ./dependency-reduced-pom.xml
 
 # Expose port
 EXPOSE 14000

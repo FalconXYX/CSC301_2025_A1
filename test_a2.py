@@ -573,12 +573,12 @@ def _local_restart(*service_names) -> tuple:
         "user-service":    (os.path.join(BASEDIR, "UserService",    "target", "user-service-1.0.0.jar"),    "/tmp/user.log"),
         "product-service": (os.path.join(BASEDIR, "ProductService", "target", "product-service-1.0.0.jar"), "/tmp/product.log"),
     }
-    # Kill any surviving processes
+    # Force-kill surviving processes (SIGKILL avoids waiting for graceful JVM shutdown)
     for name in service_names:
         jar_path, _ = service_map.get(name, ("", ""))
         if jar_path:
-            subprocess.run(["pkill", "-f", os.path.basename(jar_path)], capture_output=True)
-    time.sleep(1)
+            subprocess.run(["pkill", "-9", "-f", os.path.basename(jar_path)], capture_output=True)
+    time.sleep(3)  # Give the OS time to release ports
     # Restart them
     for name in service_names:
         jar_path, log_path = service_map.get(name, ("", ""))
@@ -638,9 +638,9 @@ def test_persistence_a2():
     http(f"{ORDER_URL}/shutdown", "POST", {})
     time.sleep(2)
 
-    rc, out = _docker("restart", "order-service", "user-service", "product-service")
-    print(f"  docker restart → rc={rc}")
-    time.sleep(4)
+    # Docker only manages postgres — restart app services locally
+    _local_restart("order-service", "user-service", "product-service")
+    print(f"  services restarting locally...")
 
     # Poll POST /restart — this makes /restart the first command so data is preserved
     restart_s, restart_b = -1, ""
@@ -677,6 +677,20 @@ def test_persistence_a2():
     # ══════════════════════════════════════════════════════════════════════════
     print(f"\n  {CYAN}[ Test 2 ] Shutdown → No Restart  (data should be WIPED){RESET}")
 
+    # If Test 1's restart failed, services may be down — recover before continuing
+    probe_s, _ = http(f"{ORDER_URL}/user/7001", "GET", timeout=3)
+    if probe_s == -1:
+        print(f"  Services not running after Test 1, restarting before Test 2...")
+        _local_restart("order-service", "user-service", "product-service")
+        for _ in range(40):
+            probe_s, _ = http(f"{ORDER_URL}/user/7001", "GET", timeout=3)
+            if probe_s != -1:
+                break
+            time.sleep(2)
+        if probe_s == -1:
+            print(f"  {RED}Services failed to restart — skipping test 2{RESET}")
+            return
+
     # Create a fresh marker user so we can verify it's gone after wipe
     http(f"{ORDER_URL}/user", "POST", {
         "command": "create", "id": 7002,
@@ -690,9 +704,9 @@ def test_persistence_a2():
     http(f"{ORDER_URL}/shutdown", "POST", {})
     time.sleep(2)
 
-    rc, out = _docker("restart", "order-service", "user-service", "product-service")
-    print(f"  docker restart → rc={rc}")
-    time.sleep(4)
+    # Docker only manages postgres — restart app services locally
+    _local_restart("order-service", "user-service", "product-service")
+    print(f"  services restarting locally...")
 
     if not _wait_order_service():
         print(f"  {RED}Services did not come back up — skipping test 2{RESET}")

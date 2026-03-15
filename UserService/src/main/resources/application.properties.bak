@@ -25,9 +25,3 @@ server.tomcat.accept-count=1000
 server.tomcat.threads.max=500
 server.tomcat.threads.min-spare=50
 
-
-# Silence performance logging
-logging.level.root=WARN
-spring.main.banner-mode=off
-logging.level.org.hibernate.SQL=WARN
-

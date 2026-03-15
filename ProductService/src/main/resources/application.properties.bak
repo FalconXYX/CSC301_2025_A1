@@ -9,7 +9,7 @@ spring.jpa.hibernate.ddl-auto=update
 spring.jpa.show-sql=false
 spring.jpa.properties.hibernate.generate_statistics=false
 
-server.port=14001
+server.port=15000
 server.address=0.0.0.0
 
 # HikariCP Connection Pool Optimization
@@ -24,10 +24,4 @@ server.tomcat.max-connections=4000
 server.tomcat.accept-count=1000
 server.tomcat.threads.max=500
 server.tomcat.threads.min-spare=50
-
-
-# Silence performance logging
-logging.level.root=WARN
-spring.main.banner-mode=off
-logging.level.org.hibernate.SQL=WARN
 

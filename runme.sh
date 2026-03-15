@@ -87,12 +87,19 @@ docker_up() {
     cd "${BASEDIR}"
     docker compose up --build -d
     echo ""
-    echo "Services started. Ports:"
-    echo "  Order Service:  http://localhost:14000"
-    echo "  User Service:   http://localhost:14001"
-    echo "  ISCS:           http://localhost:14002"
-    echo "  Product Service: http://localhost:15000"
-    echo "  PostgreSQL:     localhost:5432"
+    echo "========================================="
+    echo "🚀 SCALED CLUSTER STARTED SUCCESSFULLY! 🚀"
+    echo "========================================="
+    echo "Your unified Load Balancer is now running at:"
+    echo "  http://localhost:80"
+    echo ""
+    echo "Under the hood, this is routing to:"
+    echo "  - UserService x3 replicas"
+    echo "  - ProductService x3 replicas"
+    echo "  - OrderService x3 replicas"
+    echo "  - ISCS x3 replicas"
+    echo "  - PostgreSQL High-Conn DB"
+    echo "========================================="
 }
 
 docker_down() {
