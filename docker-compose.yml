@@ -42,7 +42,7 @@ services:
       - JAVA_TOOL_OPTIONS=-Xms256m -Xmx512m -XX:+UseG1GC
       - SPRING_DATASOURCE_URL=jdbc:postgresql://${DB_HOST:-postgres}:${DB_PORT:-5432}/csc301_db
     deploy:
-      replicas: 3
+      replicas: 5
     depends_on:
       postgres:
         condition: service_healthy
@@ -57,7 +57,7 @@ services:
       - JAVA_TOOL_OPTIONS=-Xms256m -Xmx512m -XX:+UseG1GC
       - SPRING_DATASOURCE_URL=jdbc:postgresql://${DB_HOST:-postgres}:${DB_PORT:-5432}/csc301_db
     deploy:
-      replicas: 3
+      replicas: 5
     depends_on:
       postgres:
         condition: service_healthy
@@ -72,7 +72,7 @@ services:
       - JAVA_TOOL_OPTIONS=-Xms256m -Xmx512m -XX:+UseG1GC
       - SPRING_DATASOURCE_URL=jdbc:postgresql://${DB_HOST:-postgres}:${DB_PORT:-5432}/csc301_db
     deploy:
-      replicas: 3
+      replicas: 5
     depends_on:
       postgres:
         condition: service_healthy
@@ -89,7 +89,7 @@ services:
       - PRODUCT_SERVICE_IP=product-service
       - PRODUCT_SERVICE_PORT=15000
     deploy:
-      replicas: 3
+      replicas: 5
     depends_on:
       - user-service
       - product-service

@@ -13,25 +13,6 @@ services:
       - product-service
       - order-service
 
-  postgres:
-    image: postgres:16-alpine
-    container_name: csc301_postgres
-    command: postgres -c max_connections=1000 -c shared_buffers=256MB -c synchronous_commit=off -c fsync=off
-    environment:
-      POSTGRES_USER: csc301
-      POSTGRES_PASSWORD: csc301password
-      POSTGRES_DB: csc301_db
-    ports:
-      - "5432:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-      - ./init-db.sql:/docker-entrypoint-initdb.d/init.sql
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U csc301"]
-      interval: 5s
-      timeout: 5s
-      retries: 10
-
   user-service:
     build:
       context: ./UserService
@@ -40,12 +21,10 @@ services:
     environment:
       - SPRING_PROFILES_ACTIVE=docker
       - JAVA_TOOL_OPTIONS=-Xms256m -Xmx512m -XX:+UseG1GC
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://${DB_HOST:-postgres}:${DB_PORT:-5432}/csc301_db
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://${DB_HOST}:${DB_PORT:-5432}/csc301_db
     deploy:
-      replicas: 3
-    depends_on:
-      postgres:
-        condition: service_healthy
+      replicas: 5
+    restart: on-failure
 
   product-service:
     build:
@@ -55,12 +34,10 @@ services:
     environment:
       - SPRING_PROFILES_ACTIVE=docker
       - JAVA_TOOL_OPTIONS=-Xms256m -Xmx512m -XX:+UseG1GC
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://${DB_HOST:-postgres}:${DB_PORT:-5432}/csc301_db
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://${DB_HOST}:${DB_PORT:-5432}/csc301_db
     deploy:
-      replicas: 3
-    depends_on:
-      postgres:
-        condition: service_healthy
+      replicas: 5
+    restart: on-failure
 
   order-service:
     build:
@@ -70,12 +47,10 @@ services:
     environment:
       - SPRING_PROFILES_ACTIVE=docker
       - JAVA_TOOL_OPTIONS=-Xms256m -Xmx512m -XX:+UseG1GC
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://${DB_HOST:-postgres}:${DB_PORT:-5432}/csc301_db
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://${DB_HOST}:${DB_PORT:-5432}/csc301_db
     deploy:
-      replicas: 3
-    depends_on:
-      postgres:
-        condition: service_healthy
+      replicas: 5
+    restart: on-failure
 
   iscs:
     build:
@@ -89,10 +64,8 @@ services:
       - PRODUCT_SERVICE_IP=product-service
       - PRODUCT_SERVICE_PORT=15000
     deploy:
-      replicas: 3
+      replicas: 5
     depends_on:
       - user-service
       - product-service
-
-volumes:
-  postgres_data:
+    restart: on-failure

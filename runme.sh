@@ -85,7 +85,17 @@ run_workload() {
 docker_up() {
     echo "Starting all services via Docker Compose..."
     cd "${BASEDIR}"
-    docker compose up --build -d
+    
+    # If DB_HOST is set, it means we are using an external database lab machine.
+    # Therefore, we use the specific docker-compose-app.yml which completely omits the local postgres DB container!
+    if [ -n "$DB_HOST" ]; then
+        echo "External DB_HOST detected ($DB_HOST). Using docker-compose-app.yml to avoid spinning up local postgres!"
+        docker compose -f docker-compose-app.yml up --build -d
+    else
+        echo "No DB_HOST detected. Using standard docker-compose.yml (includes local postgres)."
+        docker compose up --build -d
+    fi
+    
     echo ""
     echo "========================================="
     echo "🚀 SCALED CLUSTER STARTED SUCCESSFULLY! 🚀"
@@ -105,7 +115,13 @@ docker_up() {
 docker_down() {
     echo "Stopping all Docker Compose services..."
     cd "${BASEDIR}"
-    docker compose down
+    
+    if [ -n "$DB_HOST" ]; then
+        docker compose -f docker-compose-app.yml down
+    else
+        docker compose down
+    fi
+    
     echo "All services stopped."
 }
 
