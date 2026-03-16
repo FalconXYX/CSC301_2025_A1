@@ -114,7 +114,7 @@ docker_up() {
     echo "🚀 SCALED CLUSTER STARTED SUCCESSFULLY! 🚀"
     echo "========================================="
     echo "Your unified Load Balancer is now running at:"
-    echo "  http://localhost:80"
+    echo "  http://localhost:4001"
     echo ""
     echo "Under the hood, this is routing to:"
     echo "  - UserService x3 replicas"

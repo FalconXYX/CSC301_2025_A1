@@ -8,7 +8,7 @@ To achieve high throughput and scalability, the system was transitioned from a s
 
 The current architecture consists of the following components:
 
-* **API Gateway / Load Balancer:** An Nginx container serves as the single unified entry point on port 80. It routes incoming traffic to the appropriate backend service clusters using round-robin load balancing.
+* **API Gateway / Load Balancer:** An Nginx container serves as the single unified entry point on port 4001. It routes incoming traffic to the appropriate backend service clusters using round-robin load balancing.
 * **Application Cluster:** The User, Product, Order, and ISCS services have been containerized and scaled to run 3 replicas each via Docker Compose.
 * **Dedicated Database Server:** As required by the assignment constraints, the PostgreSQL database is hosted on a completely separate physical lab machine. The application cluster connects to it via a configurable environment variable `DB_HOST`.
 

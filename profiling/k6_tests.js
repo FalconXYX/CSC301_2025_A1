@@ -19,7 +19,7 @@ export const options = {
   },
 };
 
-const BASE_URL = __ENV.TARGET_URL || "http://localhost:80";
+const BASE_URL = __ENV.TARGET_URL || "http://localhost:4001";
 
 export default function () {
   const iter = exec.scenario.iterationInTest;
