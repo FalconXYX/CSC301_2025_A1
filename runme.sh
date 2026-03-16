@@ -95,14 +95,14 @@ docker_up() {
     # Therefore, we use the specific docker-compose-app.yml which completely omits the local postgres DB container!
     if [ -n "$DB_HOST" ]; then
         echo "External DB_HOST detected ($DB_HOST). Using docker-compose-app.yml to avoid spinning up local postgres!"
-        docker compose -f docker-compose-app.yml up --build -d \
+        docker-compose -f docker-compose-app.yml up -d \
             --scale user-service="$replicas" \
             --scale product-service="$replicas" \
             --scale order-service="$replicas" \
             --scale iscs="$replicas"
     else
         echo "No DB_HOST detected. Using standard docker-compose.yml (includes local postgres)."
-        docker compose up --build -d \
+        docker-compose up -d \
             --scale user-service="$replicas" \
             --scale product-service="$replicas" \
             --scale order-service="$replicas" \
@@ -130,9 +130,9 @@ docker_down() {
     cd "${BASEDIR}"
     
     if [ -n "$DB_HOST" ]; then
-        docker compose -f docker-compose-app.yml down
+        docker-compose -f docker-compose-app.yml down
     else
-        docker compose down
+        docker-compose down
     fi
     
     echo "All services stopped."
