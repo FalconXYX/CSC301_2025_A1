@@ -9,12 +9,14 @@
 #        ./runme.sh -w <file>       (run workload parser)
 #        ./runme.sh -d              (start all services via Docker Compose)
 #        ./runme.sh -ddown          (stop all Docker Compose services)
+#        ./runme.sh -remote         (bootstrap and start on remote hosts)
 #        ./runme.sh -clean          (remove compiled artifacts)
 
 set -e
 
 BASEDIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CONFIG_FILE="${BASEDIR}/config.json"
+REMOTE_SETUP_SCRIPT="${BASEDIR}/setup_remote.sh"
 
 # Use Maven wrapper (mvnw) - no external Maven installation needed
 MVN_CMD="${BASEDIR}/mvnw"
@@ -85,15 +87,26 @@ run_workload() {
 docker_up() {
     echo "Starting all services via Docker Compose..."
     cd "${BASEDIR}"
+
+    # Compose ignores deploy.replicas unless using Swarm, so use --scale for local multi-instance runs.
+    local replicas="${REPLICAS:-5}"
     
     # If DB_HOST is set, it means we are using an external database lab machine.
     # Therefore, we use the specific docker-compose-app.yml which completely omits the local postgres DB container!
     if [ -n "$DB_HOST" ]; then
         echo "External DB_HOST detected ($DB_HOST). Using docker-compose-app.yml to avoid spinning up local postgres!"
-        docker compose -f docker-compose-app.yml up --build -d
+        docker compose -f docker-compose-app.yml up --build -d \
+            --scale user-service="$replicas" \
+            --scale product-service="$replicas" \
+            --scale order-service="$replicas" \
+            --scale iscs="$replicas"
     else
         echo "No DB_HOST detected. Using standard docker-compose.yml (includes local postgres)."
-        docker compose up --build -d
+        docker compose up --build -d \
+            --scale user-service="$replicas" \
+            --scale product-service="$replicas" \
+            --scale order-service="$replicas" \
+            --scale iscs="$replicas"
     fi
     
     echo ""
@@ -136,9 +149,20 @@ clean() {
     echo "Clean complete!"
 }
 
+remote_setup() {
+    if [ ! -f "$REMOTE_SETUP_SCRIPT" ]; then
+        echo "Error: $REMOTE_SETUP_SCRIPT not found"
+        exit 1
+    fi
+    if [ ! -x "$REMOTE_SETUP_SCRIPT" ]; then
+        chmod +x "$REMOTE_SETUP_SCRIPT"
+    fi
+    "$REMOTE_SETUP_SCRIPT"
+}
+
 # Parse command line arguments
 if [ $# -eq 0 ]; then
-    echo "Usage: $0 {-c|-u|-p|-o|-i|-w <file>|-d|-ddown|-clean}"
+    echo "Usage: $0 {-c|-u|-p|-o|-i|-w <file>|-d|-ddown|-remote|-clean}"
     echo "  -c                Compile all services"
     echo "  -u                Start User Service (local)"
     echo "  -p                Start Product Service (local)"
@@ -147,6 +171,7 @@ if [ $# -eq 0 ]; then
     echo "  -w <workloadfile> Run Workload Parser"
     echo "  -d                Start all services via Docker Compose"
     echo "  -ddown            Stop all Docker Compose services"
+    echo "  -remote           Bootstrap and start on remote hosts"
     echo "  -clean            Remove compiled artifacts"
     exit 1
 fi
@@ -176,12 +201,15 @@ case "$1" in
     -ddown)
         docker_down
         ;;
+    -remote)
+        remote_setup
+        ;;
     -clean)
         clean
         ;;
     *)
         echo "Unknown option: $1"
-        echo "Usage: $0 {-c|-u|-p|-o|-i|-w <file>|-d|-ddown|-clean}"
+        echo "Usage: $0 {-c|-u|-p|-o|-i|-w <file>|-d|-ddown|-remote|-clean}"
         exit 1
         ;;
 esac
