@@ -1,5 +1,3 @@
-version: "3.8"
-
 # Docker is used only for the PostgreSQL database.
 # All application services (UserService, ProductService, OrderService, ISCS)
 # are run locally via run_a2_tests.sh.

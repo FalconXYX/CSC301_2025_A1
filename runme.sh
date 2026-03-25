@@ -40,19 +40,29 @@ compile() {
     echo "Compilation complete!"
 }
 
+ensure_postgres() {
+    echo "Ensuring PostgreSQL is running via Docker..."
+    cd "${BASEDIR}"
+    docker compose up -d postgres
+    sleep 2
+}
+
 start_user_service() {
+    ensure_postgres
     echo "Starting User Service..."
     cd "${BASEDIR}/UserService"
     java -jar "target/user-service-1.0.0.jar" "${CONFIG_FILE}"
 }
 
 start_product_service() {
+    ensure_postgres
     echo "Starting Product Service..."
     cd "${BASEDIR}/ProductService"
     java -jar "target/product-service-1.0.0.jar" "${CONFIG_FILE}"
 }
 
 start_order_service() {
+    ensure_postgres
     echo "Starting Order Service..."
     cd "${BASEDIR}/OrderService"
     java -jar "target/order-service-1.0.0.jar" "${CONFIG_FILE}"

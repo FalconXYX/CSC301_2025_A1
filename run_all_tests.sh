@@ -26,7 +26,10 @@ cleanup() {
     pkill -f "ISCS.py" 2>/dev/null || true
     pkill -f "python.*ISCS" 2>/dev/null || true
     sleep 2
-    echo "✓ Services stopped"
+    echo "Stopping Postgres (Docker)..."
+    cd "$BASEDIR"
+    docker compose down 2>/dev/null || true
+    echo "✓ Services and Postgres stopped"
 }
 
 # Set trap to cleanup on exit
@@ -62,6 +65,15 @@ main() {
     echo -e "${GREEN}✓ Test files found${NC}"
     echo ""
     
+    echo "========================================================================"
+    echo "STARTING POSTGRES (Docker)"
+    echo "========================================================================"
+    cd "$BASEDIR"
+    docker compose up -d postgres
+    echo "Waiting for Postgres..."
+    sleep 3
+    echo ""
+
     # Start services
     echo "========================================================================"
     echo "STARTING SERVICES"
