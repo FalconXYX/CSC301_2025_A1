@@ -15,7 +15,7 @@ import signal
 from pathlib import Path
 
 # Configuration
-ORDER_SERVICE_URL = "http://127.0.0.1:14000"
+ORDER_SERVICE_URL = "http://127.0.0.1:4003"
 TEST_CASES_DIR = "CSC301_A1_testcases"
 PAYLOAD_DIR = f"{TEST_CASES_DIR}/payloads"
 RESPONSE_DIR = f"{TEST_CASES_DIR}/responses"

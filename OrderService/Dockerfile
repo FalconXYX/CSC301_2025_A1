@@ -18,7 +18,7 @@ COPY --from=builder /build/target/order-service-1.0.0.jar app.jar
 COPY --from=builder /build/target/dependency-reduced-pom.xml ./dependency-reduced-pom.xml
 
 # Expose port
-EXPOSE 14000
+EXPOSE 4003
 
 # Run application
 ENTRYPOINT ["java", "-jar", "app.jar", "/app/config.json"]

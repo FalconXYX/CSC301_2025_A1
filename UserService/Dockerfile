@@ -18,7 +18,7 @@ COPY --from=builder /build/target/user-service-1.0.0.jar app.jar
 COPY --from=builder /build/target/dependency-reduced-pom.xml ./dependency-reduced-pom.xml
 
 # Expose port
-EXPOSE 14001
+EXPOSE 4001
 
 # Run application
 ENTRYPOINT ["java", "-jar", "app.jar", "/app/config.json"]

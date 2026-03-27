@@ -28,8 +28,8 @@ def load_config(config_path):
     user_config = config.get("UserService", {})
     product_config = config.get("ProductService", {})
 
-    user_service_url = f"http://{user_ip or user_config.get('ip', '127.0.0.1')}:{user_port or user_config.get('port', 14001)}"
-    product_service_url = f"http://{product_ip or product_config.get('ip', '127.0.0.1')}:{product_port or product_config.get('port', 15000)}"
+    user_service_url = f"http://{user_ip or user_config.get('ip', '127.0.0.1')}:{user_port or user_config.get('port', 4001)}"
+    product_service_url = f"http://{product_ip or product_config.get('ip', '127.0.0.1')}:{product_port or product_config.get('port', 4002)}"
     print(f"ISCS routing: user={user_service_url}, product={product_service_url}")
 
 def make_request(url, method, data=None):
@@ -138,7 +138,7 @@ if __name__ == '__main__':
     iscs_config = config.get("InterServiceCommunication", {})
     # Allow env override for ISCS listen address (Docker binds on 0.0.0.0)
     ip = os.environ.get("ISCS_LISTEN_IP", iscs_config.get("ip", "127.0.0.1"))
-    port = int(os.environ.get("ISCS_LISTEN_PORT", iscs_config.get("port", 14002)))
+    port = int(os.environ.get("ISCS_LISTEN_PORT", iscs_config.get("port", 4004)))
 
     server = HTTPServer((ip, port), ISCSHandler)
     server.allow_reuse_address = True

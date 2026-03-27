@@ -33,15 +33,7 @@ done
 # ── Cleanup ────────────────────────────────────────────────────────────────────
 cleanup() {
     echo ""
-    echo -e "${YELLOW}Stopping services...${NC}"
-    [[ -n "$ISCS_PID"    ]] && kill "$ISCS_PID"    2>/dev/null || true
-    [[ -n "$USER_PID"    ]] && kill "$USER_PID"    2>/dev/null || true
-    [[ -n "$PRODUCT_PID" ]] && kill "$PRODUCT_PID" 2>/dev/null || true
-    [[ -n "$ORDER_PID"   ]] && kill "$ORDER_PID"   2>/dev/null || true
-    sleep 1
-    echo -e "${YELLOW}Stopping Postgres (Docker)...${NC}"
-    cd "${BASEDIR}"
-    docker compose down 2>/dev/null || true
+    
     echo -e "${GREEN}✓ All stopped${NC}"
 }
 
@@ -174,9 +166,9 @@ wait_for() {
     echo -e " ${GREEN}ready${NC}"
 }
 
-wait_for "UserService   (:14001)" "http://127.0.0.1:14001/user/0"    || { cat /tmp/user.log;    exit 1; }
-wait_for "ProductService(:15000)" "http://127.0.0.1:15000/product/0" || { cat /tmp/product.log; exit 1; }
-wait_for "OrderService  (:14000)" "http://127.0.0.1:14000"           || { cat /tmp/order.log;   exit 1; }
+wait_for "UserService   (:4001)" "http://127.0.0.1:4001/user/0"    || { cat /tmp/user.log;    exit 1; }
+wait_for "ProductService(:4002)" "http://127.0.0.1:4002/product/0" || { cat /tmp/product.log; exit 1; }
+wait_for "OrderService  (:4003)" "http://127.0.0.1:4003"           || { cat /tmp/order.log;   exit 1; }
 
 echo ""
 echo -e "${GREEN}✓ All services are ready${NC}"

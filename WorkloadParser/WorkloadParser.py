@@ -238,7 +238,7 @@ if __name__ == "__main__":
         sys.exit(1)
 
     workload_file = sys.argv[1]
-    order_service_url = sys.argv[2] if len(sys.argv) > 2 else "http://127.0.0.1:14000"
+    order_service_url = sys.argv[2] if len(sys.argv) > 2 else "http://127.0.0.1:4003"
 
     print(f"Parsing workload from: {workload_file}")
     print(f"Order Service URL:     {order_service_url}")

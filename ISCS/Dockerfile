@@ -10,7 +10,7 @@ COPY requirements.txt . 2>/dev/null || echo "No requirements.txt"
 RUN if [ -f requirements.txt ]; then pip install --no-cache-dir -r requirements.txt; fi
 
 # Expose port
-EXPOSE 14002
+EXPOSE 4004
 
 # Run ISCS
 ENTRYPOINT ["python3", "ISCS.py", "/app/config.json"]
